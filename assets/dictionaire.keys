@@ -1,7 +1,3 @@
-# keys that are known to
-# work for some hotel locks.
-# exteded-std.keys might
-# have more working keys.
 ffffffffffff
 2a2c13cc242a
 8a19d40cf2b5
@@ -26,12 +22,8 @@ afbecd120454
 354a787087f1
 4a306e62e9b6
 135b88a94b8b
-# more well known keys
-# that can be found publicly
-# standard keys
 d3f7d3f7d3f7
 000000000000
-# keys from mfoc
 b0b1b2b3b4b5
 4d3a99c351dd
 1a982c7e459a
@@ -41,32 +33,26 @@ aabbccddeeff
 a0478cc39091
 533cb6c723f6
 8fd0a4f256e9
-# keys from:
-# http://pastebin.com/wcthxlzz
 a64598a77478
 26940b21ff5d
 fc00018778f7
 00000ffe2488
 5c598c9c58b5
 e4d2770a89be
-# http://pastebin.com/svgjn30q
 434f4d4d4f41
 434f4d4d4f42
 47524f555041
 47524f555042
 505249564141
 505249564142
-# http://pastebin.com/d7ssetef
 0297927c0f77
 ee0042f88840
 722bfcc5375f
 f1d83f964314
-# http://pastebin.com/pvjx0xvs
 54726176656c
 776974687573
 4af9d7adebe4
 2ba9621e0a36
-# http://pastebin.com/y3pdbwr1
 000000000001
 123456789abc
 b127c6f41436
@@ -85,12 +71,9 @@ a94133013401
 a053a292a4af
 505249565441
 505249565442
-# http://pastebin.com/tuxj17k3
 fc0001877bf7
-# http://0x9000.blogspot.com/2010/12/mifare-classic-default-keys.html
 a0b0c0d0e0f0
 a1b1c1d1e1f1
-# https://code.google.com/p/mifare-key-cracker/downloads/list
 bd493a3962b6
 010203040506
 111111111111
@@ -108,7 +91,6 @@ cccccccccccc
 dddddddddddd
 eeeeeeeeeeee
 0123456789ab
-# https://github.com/4zm/mfterm/blob/master/dictionary.txt
 000000000002
 00000000000a
 00000000000b
@@ -116,12 +98,8 @@ eeeeeeeeeeee
 200000000000
 a00000000000
 b00000000000
-# key from:
-# ladyada.net
 abcdef123456
-# http://irq5.io/2013/04/13/decoding-bcard-conference-badges/
 f4a9ef2afc6d
-# https://github.com/iceman1001/proxmark
 4b0b20107ccb
 569369c5a0e5
 632193be1c3c
@@ -478,7 +456,6 @@ f792c4c76a5c
 f7a39753d018
 f9861526130f
 fad63ecb5891
-# some keys of https://w3bsit3-dns.com and https://ikey.ru
 bc4580b7f20b
 8e26e45e7d65
 a7141147d430
@@ -525,7 +502,6 @@ acffffffffff
 044ce1872bc3
 114d6be9440c
 afcef64c9913
-# russian troika card
 ec29806d9738
 08b386463229
 0e8f64340ba4
@@ -582,7 +558,6 @@ f8493407799d
 6b8bd9860763
 d3a297dc2698
 fbf225dc5d58
-# strelka extension
 3367bfaa91db
 4b609876bba3
 5c83859f2224
@@ -595,7 +570,6 @@ c4d3911ad1b3
 cad7d4a6a996
 da898acbb854
 fea1295774f9
-# moscow public toilets card
 807119f81418
 22c8bcd10aaa
 0aaaba420191
@@ -604,7 +578,6 @@ dbf9f79ab7a2
 34ede51b4c22
 c8bcd10aaaba
 bcd10aaaba42
-# moscow social card
 2735fc181807
 2aba9519f574
 84fd7f7a12b6
@@ -671,8 +644,6 @@ f750c0095199
 93eb64acf43d
 a229e68ad9e5
 49c2b5296ef4
-# keys from rfidresearchgroup proxmark3 project
-# https://github.com/rfidresearchgroup/proxmark3/blob/master/client/dictionaries/mfc_default_keys.dic
 0854bf31111e
 0c03a720f208
 1fcef3005bcf
@@ -1153,7 +1124,6 @@ f91750e629d5
 93a5ce63c873
 93b43d689f85
 98eac5321d2f
-# iron logic
 a3a26ef4c6b0
 2c3feaae99fc
 e85b73382e1f
@@ -1171,7 +1141,6 @@ dec0ceb0ce24
 413bed2ae45b
 d6261a9a4b3f
 cb9d507ce56d
-# tehran ezpay
 38a88aec1c43
 cbd2568bc7c6
 7bcb4774ec8f
@@ -1187,7 +1156,6 @@ d3b1c7ea5c53
 604ac8d87c7e
 8e7b29460f12
 bb3d7b11d224
-# more keys from the pm3 repo
 dc018fc1d126
 c428c4550a75
 0c4233587119
@@ -1919,7 +1887,6 @@ bd454bd52792
 13254608d0ab
 aa034f342a55
 1b2d4e10d8b3
-# rotterdam university of applied sciences campus card
 bb7923232725
 a95bd5bb4fc5
 b099335628df
@@ -2386,7 +2353,6 @@ c992f85b2ddd
 b6f0fc87f57f
 30c1dc9dd040
 56cf3acd90ca
-# keys of armenian underground ticket
 a0a1a2a8a4a5
 0d6057e8133b
 d3f3b958b8a3
@@ -2396,10 +2362,8 @@ e4410ef8ed2d
 3e120568a35c
 ce99fbc8bd26
 2196fad8115b
-# pik comfort moscow keys (isbc mifare plus se 1k)
 009fb42d98ed
 002e626e2820
-# russian podorozhnik card (saint-petersburg transport, may be combined with troika)
 038b5f9b5a2a
 04dc35277635
 0c420a20e056
@@ -2429,20 +2393,15 @@ d27058c6e2c7
 e19504c39461
 fa1fbb3f0f1f
 ff16014fefc7
-# key from french swimming pool badge
 000131b93f28
-# wojo coworking space, fance
 ff75afda5a3c
 558aad64eb5b
 518108e061e2
 fcddf7767c10
 a6b3f6c8f1d4
 b1c4a8f7f6e3
-# key from some random card
 001122334455
-# key from hotel in spain
 6ca761ab6ca7
-# universidade de são paulo (usp) student card
 17b50e38f1b0
 24e311f594ce
 3794fbfb1a54
@@ -2458,8 +2417,6 @@ d33673c19243
 d89a506542f2
 e5813cd228f1
 fab943906e9c
-# bandai namco passport [fka banapassport] / sega aime card
-# dumped on the flipper devices discord server
 6090d00632f5
 019761aa8082
 574343467632
@@ -2493,17 +2450,14 @@ e69dd9015a43
 c8382a233993
 7b304f2a12a6
 fc9418bf788b
-# guest cashless prepaid arcade payment cards
 168168168168
 198407157610
 4e4f584d2101
 4e4f584d2105
 686b35333376
 861861861861
-# uk london office
 435df6296ec4
 2338b4913222
-# acces card of students, and more in occitanie, france
 e9a553102ea5
 f982e971cfed
 1f42ab9159ee
@@ -2521,4 +2475,3 @@ ccb541598d72
 1988b5d48ec3
 892eef0d30fb
 0fe5ce5cc640
-# more well known keys!

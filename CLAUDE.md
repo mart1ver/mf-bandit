@@ -55,4 +55,4 @@ Two parallel interfaces, identical core logic — **keep them in sync**:
 
 ### Dependency build order
 
-libnfc must be built before mfoc and mfcuk. Sources are bundled as git submodules/clones in `./libnfc/`, `./mfoc/`, `./mfcuk/`. `autoreconf -i` is used instead of `chmod +x configure` because autotools files may be absent from the clone.
+libnfc must be built before mfoc and mfcuk. Sources are bundled as plain directories in `./libnfc/`, `./mfoc/`, `./mfcuk/`. `autoreconf -i` is used instead of `chmod +x configure` because autotools files may be absent.
