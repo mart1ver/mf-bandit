@@ -38,6 +38,67 @@ function backup(){                 # Sauvegarde des badges dans le dossier $DATA
 	fi
         basemenu
 }
+function backupMfcuk(){            # Sauvegarde en forçant mfcuk (badge récalcitrant)
+	cd "$CURDIR"
+	while true; do
+		BADGE_UID=$(presence)
+		case $? in
+			0) whiptail --title "mf-bandit Backup mfcuk" --msgbox "Ok, badge detecte avec l'UID: $BADGE_UID.." 8 78 ; break ;;
+			1) whiptail --title "mf-bandit Backup mfcuk" --msgbox "Placez le badge à copier sur le lecteur puis appuyez sur OK.." 8 78 ;;
+			2) whiptail --title "mf-bandit Backup mfcuk" --msgbox "Erreur: lecteur NFC non disponible. Verifiez la connexion." 8 78 ; basemenu ; return ;;
+		esac
+	done
+	BADGE_NAME=$(whiptail --title "Nom du badge" --inputbox "Entrez le nom de la sauvegarde:" 10 60 3>&1 1>&2 2>&3)
+	if [ $? -ne 0 ]; then basemenu ; return ; fi
+	if [ -z "$BADGE_NAME" ]; then
+		whiptail --title "mf-bandit Backup mfcuk" --msgbox "Merci de donner un nom à la sauvegarde.." 8 78
+		basemenu ; return
+	fi
+	BADGE_DUMP="$DATA/$BADGE_NAME-$BADGE_UID.dmp"
+	BADGE_DUMP_NAME="$BADGE_NAME-$BADGE_UID.dmp"
+	if [ -f "$BADGE_DUMP" ]; then
+		whiptail --title "mf-bandit Backup mfcuk" --msgbox "Une sauvegarde porte deja le meme nom.." 8 78
+		basemenu ; return
+	fi
+	whiptail --title "mf-bandit Backup mfcuk" --msgbox "Attaque mfcuk (darkside) en cours, peut prendre très longtemps.. appuyez sur ENTRÉE." 8 78
+	>&2 echo -e "${COULEUR}MF-BANDIT Backup mfcuk:       <Attaque darkside avec mfcuk..>${NC}"
+	local MFCUK_TEMP
+	MFCUK_TEMP=$(mktemp)
+	if [ "$MFOC_VERBOSE" -eq 1 ]; then
+		mfcuk -C -R 0:A -v 3 -s 50 -S 50 2>&1 | tee "$MFCUK_TEMP" >&2
+	else
+		mfcuk -C -R 0:A -v 3 -s 50 -S 50 > "$MFCUK_TEMP" 2>&1
+	fi
+	local found_keys
+	found_keys=$(grep -oiE '\b[0-9a-f]{12}\b' "$MFCUK_TEMP")
+	rm -f "$MFCUK_TEMP"
+	if [ -z "$found_keys" ]; then
+		whiptail --title "mf-bandit Backup mfcuk" --msgbox "Erreur: mfcuk n'a pas trouvé de clés." 8 78
+		basemenu ; return
+	fi
+	>&2 echo -e "${COULEUR}MF-BANDIT Backup mfcuk:       <Clés trouvées, injection dans le dictionnaire..>${NC}"
+	local DICT_TEMP
+	DICT_TEMP=$(mktemp)
+	echo "$found_keys" > "$DICT_TEMP"
+	cat "$DICT" >> "$DICT_TEMP"
+	cat -n "$DICT_TEMP" | sort -uk2 | sort -nk1 | cut -f2- > "$DICT"
+	sed -i '/^[[:space:]]*#/d; /^$/d' "$DICT"
+	rm -f "$DICT_TEMP"
+	>&2 echo -e "${COULEUR}MF-BANDIT Backup mfcuk:       <Dump du badge avec mfoc..>${NC}"
+	if [ "$MFOC_VERBOSE" -eq 1 ]; then
+		mfoc -P "$MFOC_PROBES" -f "$DICT" -O "$BADGE_DUMP" | tee LastMfocOut.tmp >&2
+	else
+		mfoc -P "$MFOC_PROBES" -f "$DICT" -O "$BADGE_DUMP" | tee LastMfocOut.tmp > /dev/null
+	fi
+	if [ ${PIPESTATUS[0]} -eq 0 ]; then
+		optimize "$BADGE_UID"
+		whiptail --title "mf-bandit Backup mfcuk" --msgbox "Ok, badge sauvegarde dans le fichier: $BADGE_DUMP_NAME.." 8 78
+	else
+		rm -f LastMfocOut.tmp "$BADGE_DUMP"
+		whiptail --title "mf-bandit Backup mfcuk" --msgbox "Erreur: mfoc n'a pas pu dumper le badge avec les clés mfcuk." 8 78
+	fi
+	basemenu
+}
 function restore(){                # Restore des badges à partir du dossier $DATA (doit avoir pour extention .dmp)
 	STARTDIR=$DATA
 	Filebrowser "Selectionez une sauvegarde à restaurer" "$STARTDIR"
@@ -319,73 +380,78 @@ function basemenu(){               # Menu de base avec whiptail
 	cd "$CURDIR"
 	ADVSEL=$(whiptail --nocancel --title "mf-bandit" --menu " " 28 78 20 \
 	"1" "Sauvegarder un badge" \
-	"2" "Restaurer un badge" \
-	"3" "Cloner un badge" \
-	"4" "effacer le contenu d'un badge et randomiser son UID" \
-	"5" "Verifier si un badge est deja sauvegarde" \
-	"6" "Comparer un badge avec une sauvegarde" \
-	"7" "Importer un fichier de clees" \
-	"8" "Supprimer une sauvegarde" \
-	"9" "Visualiser une sauvegarde" \
-	"10" "Optimiser le dictionnaire et l'index" \
-	"11" "Regler le nombre de probes mfoc (actuel: $MFOC_PROBES)" \
-	"12" "Verbosité mfoc/mfcuk (actuel: $([ "$MFOC_VERBOSE" -eq 1 ] && echo ON || echo OFF))" \
-	"13" "Blacklister pn533 (fix lecteur NFC)" \
-	"14" "Quitter mf-bandit" 3>&1 1>&2 2>&3)
+	"2" "Sauvegarder un badge (forcer mfcuk)" \
+	"3" "Restaurer un badge" \
+	"4" "Cloner un badge" \
+	"5" "effacer le contenu d'un badge et randomiser son UID" \
+	"6" "Verifier si un badge est deja sauvegarde" \
+	"7" "Comparer un badge avec une sauvegarde" \
+	"8" "Importer un fichier de clees" \
+	"9" "Supprimer une sauvegarde" \
+	"10" "Visualiser une sauvegarde" \
+	"11" "Optimiser le dictionnaire et l'index" \
+	"12" "Regler le nombre de probes mfoc (actuel: $MFOC_PROBES)" \
+	"13" "Verbosité mfoc/mfcuk (actuel: $([ "$MFOC_VERBOSE" -eq 1 ] && echo ON || echo OFF))" \
+	"14" "Blacklister pn533 (fix lecteur NFC)" \
+	"15" "Quitter mf-bandit" 3>&1 1>&2 2>&3)
 	case $ADVSEL in
         1)
             backup
 	    	basemenu
         ;;
         2)
-            restore
+            backupMfcuk
 	    	basemenu
         ;;
         3)
+            restore
+	    	basemenu
+        ;;
+        4)
            clone
 	    	basemenu
         ;;
-		4)
+		5)
             format
         	basemenu
         ;;
-		5)
+		6)
             search
 	    	basemenu
         ;;
-		6)
+		7)
 	    	compare
         	basemenu
         ;;
-		7)
+		8)
             importKeys
 	    	basemenu
         ;;
-		8)
+		9)
             eraseBackup
             basemenu
         ;;
-        9)
+        10)
             displayDump
             basemenu
         ;;
-		10)
+		11)
             manualOptimize
             basemenu
         ;;
-		11)
+		12)
             setMfocProbes
             basemenu
         ;;
-		12)
+		13)
             toggleVerbose
             basemenu
         ;;
-		13)
+		14)
             blacklistPn533
             basemenu
         ;;
-		14)
+		15)
             whiptail --title "Bye Bye" --msgbox "Merci d'avoir utilise mf-bandit!" 8 45
 	    exit 0
         ;;
@@ -602,9 +668,9 @@ function mfocWithFallback(){       # Tente mfoc, puis mfcuk en cas d'echec, avec
 	local MFCUK_TEMP
 	MFCUK_TEMP=$(mktemp)
 	if [ "$MFOC_VERBOSE" -eq 1 ]; then
-		mfcuk -C -R 0:A -s 250 -S 250 2>&1 | tee "$MFCUK_TEMP" >&2
+		mfcuk -C -R 0:A -v 3 -s 50 -S 50 2>&1 | tee "$MFCUK_TEMP" >&2
 	else
-		mfcuk -C -R 0:A -s 250 -S 250 > "$MFCUK_TEMP" 2>&1
+		mfcuk -C -R 0:A -v 3 -s 50 -S 50 > "$MFCUK_TEMP" 2>&1
 	fi
 	local found_keys
 	found_keys=$(grep -oiE '\b[0-9a-f]{12}\b' "$MFCUK_TEMP")
