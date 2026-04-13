@@ -328,7 +328,9 @@ function basemenu(){               # Menu de base avec whiptail
 	"8" "Supprimer une sauvegarde" \
 	"9" "Visualiser une sauvegarde" \
 	"10" "Optimiser le dictionnaire et l'index" \
-	"11" "Quitter mf-bandit" 3>&1 1>&2 2>&3)
+	"11" "Blacklister pn533 (fix lecteur NFC)" \
+	"12" "Regler le nombre de probes mfoc (actuel: $MFOC_PROBES)" \
+	"13" "Quitter mf-bandit" 3>&1 1>&2 2>&3)
 	case $ADVSEL in
         1)
             backup
@@ -371,10 +373,49 @@ function basemenu(){               # Menu de base avec whiptail
             basemenu
         ;;
 		11)
+            blacklistPn533
+            basemenu
+        ;;
+		12)
+            setMfocProbes
+            basemenu
+        ;;
+		13)
             whiptail --title "Bye Bye" --msgbox "Merci d'avoir utilise mf-bandit!" 8 45
 	    exit 0
         ;;
     	esac
+}
+function setMfocProbes(){          # Regle le nombre de probes mfoc (-P)
+	local input
+	input=$(whiptail --title "mf-bandit Probes mfoc" \
+		--inputbox "Nombre de probes mfoc par secteur:\n(defaut=20, moins=plus rapide, plus=plus fiable)" \
+		10 60 "$MFOC_PROBES" 3>&1 1>&2 2>&3)
+	if [ $? -ne 0 ] || [ -z "$input" ]; then
+		return
+	fi
+	if ! [[ "$input" =~ ^[0-9]+$ ]] || [ "$input" -lt 1 ]; then
+		whiptail --title "mf-bandit Probes mfoc" --msgbox "Valeur invalide, doit etre un entier >= 1." 8 50
+		return
+	fi
+	MFOC_PROBES="$input"
+	whiptail --title "mf-bandit Probes mfoc" --msgbox "Probes mfoc regle a $MFOC_PROBES." 8 50
+}
+function blacklistPn533(){         # Décharge les modules pn533 et les blackliste au démarrage
+	>&2 echo -e "${COULEUR}MF-BANDIT:                    <Droits sudo requis, entrez votre mot de passe:>${NC}"
+	sudo -v || { whiptail --title "mf-bandit pn533" --msgbox "Droits sudo requis." 8 50 ; return ; }
+	whiptail --title "mf-bandit pn533" --msgbox "Desactivation des modules pn533 (conflit avec le lecteur ACR122U).." 8 78
+	sudo modprobe -r pn533_usb pn533 nfc 2>/dev/null
+	sudo tee /etc/modprobe.d/blacklist-pn533.conf > /dev/null <<EOF
+blacklist pn533_usb
+blacklist pn533
+blacklist nfc
+EOF
+	if [ $? -eq 0 ]; then
+		whiptail --title "mf-bandit pn533" --msgbox "Ok, modules pn533 desactives et blacklistes. Le lecteur ACR122U devrait fonctionner." 8 78
+	else
+		whiptail --title "mf-bandit pn533" --msgbox "Erreur lors du blacklistage (droits sudo requis)." 8 78
+	fi
 }
 function Filebrowser(){            # Selectioner des fichiers avec whiptail
     if [ -n "$2" ] ; then
@@ -444,6 +485,7 @@ function initialize(){             # Fonction d'nitialisation du script
 	STARTDIR=$DATA                 # Pour le filebrowser
 	CURDIR=$(pwd)                  # On stocke pwd à l'initialisation du script    
 	FILEXT='dmp'                   # Extention utilisee par defaut dans le filebrowser
+	MFOC_PROBES=20                 # Nombre de probes mfoc par secteur (defaut 20, reduire pour accelerer)
 	mkdir -p "$DATA"               # On creee le dossier des sauvegardes si il n'existe pas
 }
 function presence(){               # Retourne l'UID du badge: 0=trouvé, 1=absent, 2=erreur hardware
@@ -508,17 +550,28 @@ function manualOptimize(){         # Nettoyage manuel du dictionnaire et de l'in
 function mfocWithFallback(){       # Tente mfoc, puis mfcuk en cas d'echec, avec ajout des clés au dictionnaire
 	local badge_uid="$1"
 	local output_file="$2"
-	mfoc -f "$DICT" -O "$output_file" | tee LastMfocOut.tmp > /dev/null
+	# Construit un fichier de clés combiné : UID-spécifique → tout index.csv → dictionnaire
+	local COMBINED_KEYS
+	COMBINED_KEYS=$(mktemp)
+	grep "^$badge_uid," "$CURDIR/assets/index.csv" 2>/dev/null | cut -d, -f2- | tr ',' '\n' > "$COMBINED_KEYS"
+	cut -d, -f2- "$CURDIR/assets/index.csv" 2>/dev/null | tr ',' '\n' >> "$COMBINED_KEYS"
+	cat "$DICT" >> "$COMBINED_KEYS"
+	local COMBINED_DEDUP
+	COMBINED_DEDUP=$(mktemp)
+	cat -n "$COMBINED_KEYS" | sort -uk2 | sort -nk1 | cut -f2- | grep -v '^$' > "$COMBINED_DEDUP"
+	rm -f "$COMBINED_KEYS"
+	mfoc -P "$MFOC_PROBES" -f "$COMBINED_DEDUP" -O "$output_file" | tee LastMfocOut.tmp >&2
 	if [ ${PIPESTATUS[0]} -eq 0 ]; then
+		rm -f "$COMBINED_DEDUP"
 		return 0
 	fi
-	rm -f LastMfocOut.tmp
+	rm -f LastMfocOut.tmp "$COMBINED_DEDUP"
 	>&2 echo -e "${COULEUR}MF-BANDIT:                    <mfoc echoue, tentative avec mfcuk (darkside attack)..>${NC}"
 	command -v whiptail &>/dev/null && \
 		whiptail --title "mf-bandit" --infobox "mfoc echoue, tentative avec mfcuk..." 6 55
 	local MFCUK_TEMP
 	MFCUK_TEMP=$(mktemp)
-	mfcuk -C -R 0:A -s 250 -S 250 2>&1 | tee "$MFCUK_TEMP" > /dev/null
+	mfcuk -C -R 0:A -s 250 -S 250 2>&1 | tee "$MFCUK_TEMP" >&2
 	local found_keys
 	found_keys=$(grep -oiE '\b[0-9a-f]{12}\b' "$MFCUK_TEMP")
 	rm -f "$MFCUK_TEMP"
@@ -534,7 +587,7 @@ function mfocWithFallback(){       # Tente mfoc, puis mfcuk en cas d'echec, avec
 	sed -i '/^[[:space:]]*#/d; /^$/d' "$DICT"
 	rm -f "$DICT_TEMP"
 	>&2 echo -e "${COULEUR}MF-BANDIT:                    <Nouvelle tentative mfoc avec les clés mfcuk..>${NC}"
-	mfoc -f "$DICT" -O "$output_file" | tee LastMfocOut.tmp > /dev/null
+	mfoc -P "$MFOC_PROBES" -f "$DICT" -O "$output_file" | tee LastMfocOut.tmp >&2
 	return ${PIPESTATUS[0]}
 }
 function checkIfIndexed(){		   # Verifie si l'uid transmit en argument et presen dans le csv, auquel cas on remonte les clees correspondantes dans le fichier de clees
