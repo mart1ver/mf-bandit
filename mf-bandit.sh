@@ -317,7 +317,7 @@ function compare(){                # Compare un badge avec une sauvegarde specif
 }
 function basemenu(){               # Menu de base avec whiptail
 	cd "$CURDIR"
-	ADVSEL=$(whiptail --nocancel --title "mf-bandit" --menu " " 20 78 12 \
+	ADVSEL=$(whiptail --nocancel --title "mf-bandit" --menu " " 28 78 20 \
 	"1" "Sauvegarder un badge" \
 	"2" "Restaurer un badge" \
 	"3" "Cloner un badge" \
@@ -328,9 +328,10 @@ function basemenu(){               # Menu de base avec whiptail
 	"8" "Supprimer une sauvegarde" \
 	"9" "Visualiser une sauvegarde" \
 	"10" "Optimiser le dictionnaire et l'index" \
-	"11" "Blacklister pn533 (fix lecteur NFC)" \
-	"12" "Regler le nombre de probes mfoc (actuel: $MFOC_PROBES)" \
-	"13" "Quitter mf-bandit" 3>&1 1>&2 2>&3)
+	"11" "Regler le nombre de probes mfoc (actuel: $MFOC_PROBES)" \
+	"12" "Verbosité mfoc/mfcuk (actuel: $([ "$MFOC_VERBOSE" -eq 1 ] && echo ON || echo OFF))" \
+	"13" "Blacklister pn533 (fix lecteur NFC)" \
+	"14" "Quitter mf-bandit" 3>&1 1>&2 2>&3)
 	case $ADVSEL in
         1)
             backup
@@ -373,18 +374,33 @@ function basemenu(){               # Menu de base avec whiptail
             basemenu
         ;;
 		11)
-            blacklistPn533
-            basemenu
-        ;;
-		12)
             setMfocProbes
             basemenu
         ;;
+		12)
+            toggleVerbose
+            basemenu
+        ;;
 		13)
+            blacklistPn533
+            basemenu
+        ;;
+		14)
             whiptail --title "Bye Bye" --msgbox "Merci d'avoir utilise mf-bandit!" 8 45
 	    exit 0
         ;;
     	esac
+}
+function toggleVerbose(){          # Active/désactive la verbosité mfoc/mfcuk
+	if [ "$MFOC_VERBOSE" -eq 1 ]; then
+		MFOC_VERBOSE=0
+		saveConfig
+		whiptail --title "mf-bandit Verbosité" --msgbox "Verbosité mfoc/mfcuk désactivée (mode silencieux)." 8 55
+	else
+		MFOC_VERBOSE=1
+		saveConfig
+		whiptail --title "mf-bandit Verbosité" --msgbox "Verbosité mfoc/mfcuk activée." 8 55
+	fi
 }
 function setMfocProbes(){          # Regle le nombre de probes mfoc (-P)
 	local input
@@ -399,6 +415,7 @@ function setMfocProbes(){          # Regle le nombre de probes mfoc (-P)
 		return
 	fi
 	MFOC_PROBES="$input"
+	saveConfig
 	whiptail --title "mf-bandit Probes mfoc" --msgbox "Probes mfoc regle a $MFOC_PROBES." 8 50
 }
 function blacklistPn533(){         # Décharge les modules pn533 et les blackliste au démarrage
@@ -477,16 +494,25 @@ function Filebrowser(){            # Selectioner des fichiers avec whiptail
        fi
     fi
 }
-function initialize(){             # Fonction d'nitialisation du script 
+function initialize(){             # Fonction d'nitialisation du script
 	DICT="assets/dictionaire.keys" # On renseigne ici le nom du fichier dictionaire
-	DATA="data"                    # On renseigne ici le nom du dossier contenant les sauvegardes 
+	DATA="data"                    # On renseigne ici le nom du dossier contenant les sauvegardes
+	CONF="assets/mf-bandit.conf"   # Fichier de configuration
 	COULEUR='\033[1;96m'           # couleur du texte dans la console
 	NC='\033[0m'                   # No Color
 	STARTDIR=$DATA                 # Pour le filebrowser
-	CURDIR=$(pwd)                  # On stocke pwd à l'initialisation du script    
+	CURDIR=$(pwd)                  # On stocke pwd à l'initialisation du script
 	FILEXT='dmp'                   # Extention utilisee par defaut dans le filebrowser
-	MFOC_PROBES=20                 # Nombre de probes mfoc par secteur (defaut 20, reduire pour accelerer)
+	MFOC_PROBES=20                 # Valeurs par défaut (écrasées par le fichier de config si existant)
+	MFOC_VERBOSE=0
 	mkdir -p "$DATA"               # On creee le dossier des sauvegardes si il n'existe pas
+	[ -f "$CONF" ] && source "$CONF"
+}
+function saveConfig(){             # Sauvegarde les réglages dans assets/mf-bandit.conf
+	cat > "$CURDIR/$CONF" <<EOF
+MFOC_PROBES=$MFOC_PROBES
+MFOC_VERBOSE=$MFOC_VERBOSE
+EOF
 }
 function presence(){               # Retourne l'UID du badge: 0=trouvé, 1=absent, 2=erreur hardware
 	NFC_OUT=$(nfc-list 2>&1)
@@ -560,7 +586,11 @@ function mfocWithFallback(){       # Tente mfoc, puis mfcuk en cas d'echec, avec
 	COMBINED_DEDUP=$(mktemp)
 	cat -n "$COMBINED_KEYS" | sort -uk2 | sort -nk1 | cut -f2- | grep -v '^$' > "$COMBINED_DEDUP"
 	rm -f "$COMBINED_KEYS"
-	mfoc -P "$MFOC_PROBES" -f "$COMBINED_DEDUP" -O "$output_file" | tee LastMfocOut.tmp >&2
+	if [ "$MFOC_VERBOSE" -eq 1 ]; then
+		mfoc -P "$MFOC_PROBES" -f "$COMBINED_DEDUP" -O "$output_file" | tee LastMfocOut.tmp >&2
+	else
+		mfoc -P "$MFOC_PROBES" -f "$COMBINED_DEDUP" -O "$output_file" | tee LastMfocOut.tmp > /dev/null
+	fi
 	if [ ${PIPESTATUS[0]} -eq 0 ]; then
 		rm -f "$COMBINED_DEDUP"
 		return 0
@@ -571,7 +601,11 @@ function mfocWithFallback(){       # Tente mfoc, puis mfcuk en cas d'echec, avec
 		whiptail --title "mf-bandit" --infobox "mfoc echoue, tentative avec mfcuk..." 6 55
 	local MFCUK_TEMP
 	MFCUK_TEMP=$(mktemp)
-	mfcuk -C -R 0:A -s 250 -S 250 2>&1 | tee "$MFCUK_TEMP" >&2
+	if [ "$MFOC_VERBOSE" -eq 1 ]; then
+		mfcuk -C -R 0:A -s 250 -S 250 2>&1 | tee "$MFCUK_TEMP" >&2
+	else
+		mfcuk -C -R 0:A -s 250 -S 250 > "$MFCUK_TEMP" 2>&1
+	fi
 	local found_keys
 	found_keys=$(grep -oiE '\b[0-9a-f]{12}\b' "$MFCUK_TEMP")
 	rm -f "$MFCUK_TEMP"
@@ -587,7 +621,11 @@ function mfocWithFallback(){       # Tente mfoc, puis mfcuk en cas d'echec, avec
 	sed -i '/^[[:space:]]*#/d; /^$/d' "$DICT"
 	rm -f "$DICT_TEMP"
 	>&2 echo -e "${COULEUR}MF-BANDIT:                    <Nouvelle tentative mfoc avec les clés mfcuk..>${NC}"
-	mfoc -P "$MFOC_PROBES" -f "$DICT" -O "$output_file" | tee LastMfocOut.tmp >&2
+	if [ "$MFOC_VERBOSE" -eq 1 ]; then
+		mfoc -P "$MFOC_PROBES" -f "$DICT" -O "$output_file" | tee LastMfocOut.tmp >&2
+	else
+		mfoc -P "$MFOC_PROBES" -f "$DICT" -O "$output_file" | tee LastMfocOut.tmp > /dev/null
+	fi
 	return ${PIPESTATUS[0]}
 }
 function checkIfIndexed(){		   # Verifie si l'uid transmit en argument et presen dans le csv, auquel cas on remonte les clees correspondantes dans le fichier de clees
