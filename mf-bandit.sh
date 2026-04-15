@@ -22,8 +22,20 @@ function backup(){                 # Sauvegarde des badges dans le dossier $DATA
 		basemenu 
 	fi
 	if [ -f "$BADGE_DUMP" ]; then
-		whiptail --title "mf-bandit Backup" --msgbox "Une sauvegarde porte deja le meme nom.." 8 78
-		basemenu 
+		CHOICE=$(whiptail --title "mf-bandit Backup" --menu "Une sauvegarde porte déjà ce nom :" 12 60 3 \
+			"1" "Ajouter un timestamp (garder les deux)" \
+			"2" "Écraser la sauvegarde existante" \
+			"3" "Annuler" 3>&1 1>&2 2>&3)
+		case "$CHOICE" in
+			1)
+				local TIMESTAMP
+				TIMESTAMP=$(date +'%F_%H-%M-%S')
+				BADGE_DUMP="$DATA/$BADGE_NAME-$BADGE_UID-$TIMESTAMP.dmp"
+				BADGE_DUMP_NAME="$BADGE_NAME-$BADGE_UID-$TIMESTAMP.dmp"
+				;;
+			2) ;;
+			*) basemenu ; return ;;
+		esac
 	fi
 	checkIfIndexed "$BADGE_UID"
 	whiptail --title "mf-bandit Backup" --msgbox "Decodage du badge avec mfoc, peu prendre longtemps, appuyez sur ENTReE.." 8 78 
@@ -57,8 +69,20 @@ function backupMfcuk(){            # Sauvegarde en forçant mfcuk (badge récalc
 	BADGE_DUMP="$DATA/$BADGE_NAME-$BADGE_UID.dmp"
 	BADGE_DUMP_NAME="$BADGE_NAME-$BADGE_UID.dmp"
 	if [ -f "$BADGE_DUMP" ]; then
-		whiptail --title "mf-bandit Backup mfcuk" --msgbox "Une sauvegarde porte deja le meme nom.." 8 78
-		basemenu ; return
+		CHOICE=$(whiptail --title "mf-bandit Backup mfcuk" --menu "Une sauvegarde porte déjà ce nom :" 12 60 3 \
+			"1" "Ajouter un timestamp (garder les deux)" \
+			"2" "Écraser la sauvegarde existante" \
+			"3" "Annuler" 3>&1 1>&2 2>&3)
+		case "$CHOICE" in
+			1)
+				local TIMESTAMP
+				TIMESTAMP=$(date +'%F_%H-%M-%S')
+				BADGE_DUMP="$DATA/$BADGE_NAME-$BADGE_UID-$TIMESTAMP.dmp"
+				BADGE_DUMP_NAME="$BADGE_NAME-$BADGE_UID-$TIMESTAMP.dmp"
+				;;
+			2) ;;
+			*) basemenu ; return ;;
+		esac
 	fi
 	whiptail --title "mf-bandit Backup mfcuk" --msgbox "Attaque mfcuk (darkside) en cours, peut prendre très longtemps.. appuyez sur ENTRÉE." 8 78
 	>&2 echo -e "${COULEUR}MF-BANDIT Backup mfcuk:       <Attaque darkside avec mfcuk..>${NC}"

@@ -41,9 +41,3 @@ Les sources de libnfc, mfoc et mfcuk doivent être placées dans les sous-dossie
 - Le dictionnaire est nettoyé automatiquement (commentaires supprimés, doublons éliminés, lowercase)
 - La configuration (probes, verbosité) est persistée dans assets/mf-bandit.conf
 
-## Pistes d'améliorations restantes
-
-- Tester avec d'autres lecteurs NFC
-- Gérer le cas où on veut donner un nom déjà existant (sauter le timestamp)
-- Mieux gérer les dossiers de données
-- Valider l'extraction des clés mfcuk sur un badge récalcitrant réel
