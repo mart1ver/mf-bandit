@@ -1,29 +1,29 @@
 # mf-bandit
 
-Scripts simplifiant l'utilisation de mfoc/mfcuk pour l'archivage et la copie de badges NFC MIFARE Classic.
+Script simplifiant l'utilisation de mfoc/mfcuk pour l'archivage et la copie de badges NFC MIFARE Classic.
 
-Deux interfaces disponibles :
-- `nfc-bandit.sh` — interface ligne de commande
-- `mf-bandit.sh` — interface graphique TUI (Whiptail)
+Interface graphique TUI via Whiptail : `mf-bandit.sh`
 
 ## Fonctionnalités
 
 - Cloner un badge vers une cible vierge
 - Sauvegarder un badge (dump chiffré .dmp avec timestamp)
+- Sauvegarder un badge en forçant mfcuk (darkside attack, pour badges récalcitrants)
 - Restaurer un badge depuis une sauvegarde
 - Optimiser le dictionnaire de clés (clés trouvées remontées en tête, doublons supprimés)
 - Indexer les badges déjà vus (UID → clés connues) pour éviter de re-cracker
 - Fallback automatique vers mfcuk si mfoc échoue, avec injection des clés dans le dictionnaire
 - Vérification et installation automatique des dépendances depuis les sources locales (libnfc, mfoc, mfcuk)
+- Blacklistage du module pn533 (fix pour lecteur ACR122U-A9)
+- Réglage du nombre de probes mfoc et de la verbosité, persistés en configuration
 
-## Usage (nfc-bandit.sh)
+## Usage
 
+```bash
+bash mf-bandit.sh
 ```
-./nfc-bandit.sh clone
-./nfc-bandit.sh backup
-./nfc-bandit.sh restore -n [nom_du_fichier.dmp]
-./nfc-bandit.sh optimize
-```
+
+Le script doit être lancé depuis le répertoire racine du projet avec `bash` (pas `sh`).
 
 ## Dépendances
 
@@ -37,8 +37,9 @@ Les sources de libnfc, mfoc et mfcuk doivent être placées dans les sous-dossie
 ## Notes
 
 - Ne sauvegarde pas l'image des badges cibles (seulement la source)
-- L'index CSV (uid_index.csv) mémorise les clés par UID pour accélérer les passages suivants
+- L'index CSV (assets/index.csv) mémorise les clés par UID pour accélérer les passages suivants
 - Le dictionnaire est nettoyé automatiquement (commentaires supprimés, doublons éliminés, lowercase)
+- La configuration (probes, verbosité) est persistée dans assets/mf-bandit.conf
 
 ## Pistes d'améliorations restantes
 

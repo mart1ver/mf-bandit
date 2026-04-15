@@ -574,6 +574,13 @@ function initialize(){             # Fonction d'nitialisation du script
 	mkdir -p "$DATA"               # On creee le dossier des sauvegardes si il n'existe pas
 	[ -f "$CONF" ] && source "$CONF"
 }
+function checkReader(){             # Vérifie la présence du lecteur NFC au démarrage
+	NFC_OUT=$(nfc-list 2>&1)
+	if echo "$NFC_OUT" | grep -qi 'error\|unable\|No NFC device'; then
+		local msg="Lecteur NFC non détecté.\n\n$(echo "$NFC_OUT" | head -5)\n\nVérifiez la connexion USB ou blacklistez le module pn533 (menu → Blacklister pn533)."
+		whiptail --title "mf-bandit — Lecteur absent" --msgbox "$msg" 16 72
+	fi
+}
 function saveConfig(){             # Sauvegarde les réglages dans assets/mf-bandit.conf
 	cat > "$CURDIR/$CONF" <<EOF
 MFOC_PROBES=$MFOC_PROBES
@@ -766,4 +773,5 @@ function checkDependencies(){      # Vérifie et installe les outils requis
 CURDIR=$(pwd)                      # Init anticipée pour checkDependencies
 checkDependencies                  # Vérifie et installe les dépendances
 initialize                         # Initialise le script
+checkReader                        # Vérifie la présence du lecteur NFC
 basemenu				           # Menu de base
